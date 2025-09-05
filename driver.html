@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Driver Shuttle Tracker</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+    const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';   // Replace with your OAuth Client ID
+    const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+    const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+
+    const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';  // Replace with your spreadsheet ID
+    const SHEET_NAME = 'MyTracker';  // Replace if different
+
+    const stopRanges = {
+      'StopA': 'B2',
+      'StopB': 'B3',
+      'StopC': 'B4',
+      'StopD': 'B5',
+      'StopE': 'B6',
+      'StopF': 'B7',
+      'StopG': 'B8'
+    };
+
+    let clientReady = false;
+
+    function handleClientLoad() {
+      gapi.load('client:auth2', initClient);
+    }
+
+    function initClient() {
+      gapi.client.init({
+        clientId: CLIENT_ID,
+        discoveryDocs: DISCOVERY_DOCS,
+        scope: SCOPES
+      }).then(() => {
+        if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+          gapi.auth2.getAuthInstance().signIn().then(enableButtons);
+        } else {
+          enableButtons();
+        }
+        clientReady = true;
+      }, (error) => {
+        alert(JSON.stringify(error, null, 2));
+      });
+    }
+
+    function enableButtons() {
+      document.querySelectorAll('button.update-status').forEach(btn => btn.disabled = false);
+    }
+
+    async function updateStatus(stop) {
+      if (!clientReady) {
+        alert('App is still loading, please wait...');
+        return;
+      }
+      const range = `${SHEET_NAME}!${stopRanges[stop]}`;
+      const params = {
+        spreadsheetId: SPREADSHEET_ID,
+        range: range,
+        valueInputOption: 'USER_ENTERED',
+      };
+      const valueRangeBody = {
+        values: [["departed"]]
+      };
+      try {
+        await gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody);
+        alert(`${stop} status updated to departed`);
+      } catch (err) {
+        alert('Error updating status: ' + err.message);
+      }
+    }
+  </script>
+</head>
+<body onload="handleClientLoad()">
+  <h1>Shuttle Driver: Update Stop Status</h1>
+
+  <!-- Initially disabled buttons -->
+  <button class="update-status" disabled onclick="updateStatus('StopA')">Stop A</button>
+  <button class="update-status" disabled onclick="updateStatus('StopB')">Stop B</button>
+  <button class="update-status" disabled onclick="updateStatus('StopC')">Stop C</button>
+  <button class="update-status" disabled onclick="updateStatus('StopD')">Stop D</button>
+  <button class="update-status" disabled onclick="updateStatus('StopE')">Stop E</button>
+  <button class="update-status" disabled onclick="updateStatus('StopF')">Stop F</button>
+  <button class="update-status" disabled onclick="updateStatus('StopG')">Stop G</button>
+</body>
+</html>
